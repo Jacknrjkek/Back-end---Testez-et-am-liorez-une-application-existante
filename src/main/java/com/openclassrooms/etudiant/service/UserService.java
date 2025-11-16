@@ -1,5 +1,7 @@
 package com.openclassrooms.etudiant.service;
 
+import com.openclassrooms.etudiant.dto.LoginRequestDTO;
+import com.openclassrooms.etudiant.dto.LoginResponseDTO;
 import com.openclassrooms.etudiant.entities.User;
 import com.openclassrooms.etudiant.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -17,6 +19,7 @@ import java.util.Optional;
 @Transactional
 @RequiredArgsConstructor
 public class UserService {
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -29,22 +32,39 @@ public class UserService {
         if (optionalUser.isPresent()) {
             throw new IllegalArgumentException("User with login " + user.getLogin() + " already exists");
         }
+
+        // Encode password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
     }
 
-    public String login(String login, String password) {
-        Assert.notNull(login, "Login must not be null");
-        Assert.notNull(password, "Password must not be null");
-        Optional<User> user = userRepository.findByLogin(login);
-        if (user.isPresent() && passwordEncoder.matches(password, password)) {
-            UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
-                    .username(login).build();
-            return jwtService.generateToken(userDetails);
-        } else {
+    public LoginResponseDTO login(LoginRequestDTO request) {
+
+        Assert.notNull(request.getLogin(), "Login must not be null");
+        Assert.notNull(request.getPassword(), "Password must not be null");
+
+        Optional<User> userOptional = userRepository.findByLogin(request.getLogin());
+
+        if (userOptional.isEmpty()) {
             throw new IllegalArgumentException("Invalid credentials");
         }
+
+        User user = userOptional.get();
+
+        // Check password
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Invalid credentials");
+        }
+
+        // Build UserDetails for JWT
+        UserDetails userDetails = org.springframework.security.core.userdetails.User
+                .withUsername(user.getLogin())
+                .password(user.getPassword())
+                .authorities("USER")
+                .build();
+
+        String token = jwtService.generateToken(userDetails);
+
+        return new LoginResponseDTO(token);
     }
-
-
 }
