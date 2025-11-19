@@ -21,13 +21,19 @@ public class UserController {
 
     @PostMapping("/api/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterDTO registerDTO) {
+
+
         userService.register(userDtoMapper.toEntity(registerDTO));
+
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @PostMapping("/api/login")
     public ResponseEntity<LoginResponseDTO> login(@RequestBody LoginRequestDTO loginRequestDTO) {
+
+
         LoginResponseDTO responseDTO = userService.login(loginRequestDTO);
+
         return ResponseEntity.ok(responseDTO);
     }
 }
