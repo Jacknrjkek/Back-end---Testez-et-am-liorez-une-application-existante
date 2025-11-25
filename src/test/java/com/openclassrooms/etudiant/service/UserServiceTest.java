@@ -2,77 +2,93 @@ package com.openclassrooms.etudiant.service;
 
 import com.openclassrooms.etudiant.entities.User;
 import com.openclassrooms.etudiant.repository.UserRepository;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-@ExtendWith(SpringExtension.class)
+/**
+ * ---------------------------------------------------------------------------
+ * TESTS UNITAIRES : register() du UserService
+ * ---------------------------------------------------------------------------
+ * Cas testés :
+ *  - user = null → IllegalArgumentException
+ *  - login déjà existant → IllegalArgumentException
+ *  - inscription valide → user sauvegardé + mot de passe hashé
+ * ---------------------------------------------------------------------------
+ */
 public class UserServiceTest {
-    private static final String FIRST_NAME = "John";
-    private static final String LAST_NAME = "Doe";
-    private static final String LOGIN = "LOGIN";
-    private static final String PASSWORD = "PASSWORD";
+
     @Mock
     private UserRepository userRepository;
+
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private JwtService jwtService;
+
     @InjectMocks
     private UserService userService;
 
-    @Test
-    public void test_create_null_user_throws_IllegalArgumentException() {
-        // GIVEN
+    @BeforeEach
+    void init() {
+        MockitoAnnotations.openMocks(this);
+    }
 
-        // THEN
-        Assertions.assertThrows(IllegalArgumentException.class,
+    // -----------------------------------------------------------------------
+    // CAS 1 : user == null
+    // -----------------------------------------------------------------------
+    @Test
+    void register_shouldThrow_whenUserIsNull() {
+        assertThrows(IllegalArgumentException.class,
                 () -> userService.register(null));
     }
 
+    // -----------------------------------------------------------------------
+    // CAS 2 : login déjà existant
+    // -----------------------------------------------------------------------
     @Test
-    public void test_create_already_exist_user_throws_IllegalArgumentException() {
-        // GIVEN
-        User user = new User();
-        user.setFirstName(FIRST_NAME);
-        user.setLastName(LAST_NAME);
-        user.setLogin(LOGIN);
-        user.setPassword(PASSWORD);
-        when(passwordEncoder.encode(PASSWORD)).thenReturn(PASSWORD);
-        when(userRepository.findByLogin(any())).thenReturn(Optional.of(user));
+    void register_shouldThrow_whenLoginAlreadyExists() {
 
-        // THEN
-        Assertions.assertThrows(IllegalArgumentException.class,
-                () -> userService.register(user));
+        User existing = new User();
+        existing.setLogin("john");
+
+        when(userRepository.findByLogin("john"))
+                .thenReturn(Optional.of(existing));
+
+        User newUser = new User();
+        newUser.setLogin("john");
+        newUser.setPassword("pass");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> userService.register(newUser));
     }
 
+    // -----------------------------------------------------------------------
+    // CAS 3 : inscription valide
+    // -----------------------------------------------------------------------
     @Test
-    public void test_create_user() {
-        // GIVEN
-        User user = new User();
-        user.setFirstName(FIRST_NAME);
-        user.setLastName(LAST_NAME);
-        user.setLogin(LOGIN);
-        user.setPassword(PASSWORD);
-        when(passwordEncoder.encode(PASSWORD)).thenReturn(PASSWORD);
-        when(userRepository.findByLogin(any())).thenReturn(Optional.empty());
+    void register_shouldSaveUser_whenValid() {
 
-        // WHEN
+        User user = new User();
+        user.setLogin("john");
+        user.setPassword("pass");
+
+        when(userRepository.findByLogin("john"))
+                .thenReturn(Optional.empty());
+
+        when(passwordEncoder.encode("pass"))
+                .thenReturn("ENCODED");
+
         userService.register(user);
 
-        // THEN
-        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(userRepository).save(userCaptor.capture());
-        assertThat(userCaptor.getValue()).isEqualTo(user);
+        verify(userRepository).save(user);
+        assertEquals("ENCODED", user.getPassword());
     }
 }
