@@ -6,7 +6,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.Optional;
 
@@ -19,11 +18,12 @@ import static org.mockito.Mockito.*;
  * ----------------------------------------------------------------------------
  * Objectif :
  * - Vérifier que loadUserByUsername() renvoie bien un UserDetails lorsque
- *   l'utilisateur existe en base.
+ * l'utilisateur existe en base.
  *
  * Remarques :
- * - Conformément aux consignes de l’exercice : on NE teste PAS les cas d’erreurs.
- *   (donc pas de test sur UsernameNotFoundException)
+ * - Conformément aux consignes de l’exercice : on NE teste PAS les cas
+ * d’erreurs.
+ * (donc pas de test sur UsernameNotFoundException)
  * ============================================================================
  */
 class CustomUserDetailServiceTest {
@@ -60,7 +60,6 @@ class CustomUserDetailServiceTest {
         assertEquals("john", details.getUsername());
         assertEquals("hashed-password", details.getPassword());
         assertTrue(details.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("USER"))
-        );
+                .anyMatch(a -> a.getAuthority().equals("USER")));
     }
 }
