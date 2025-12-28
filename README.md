@@ -43,7 +43,7 @@ Avant de commencer, assurez-vous d'avoir installé :
 
 ### 1. Cloner le projet
 ```bash
-git clone https://github.com/votre-repo/etudiant-backend.git
+git clone https://github.com/Jacknrjkek/ExpertDevOps-P2-Etudiant-Backend.git
 cd etudiant-backend
 ```
 
